@@ -7,3 +7,5 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 Migrations
+*__pycache__*
+*user.cpython-311.pyc*
