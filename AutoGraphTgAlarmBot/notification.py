@@ -22,7 +22,7 @@ async def send_telegram_messages():
                 data = {
                     'chat_id': user.telegram_chat_id,
                     'text': f"Заранее прошу прощения..\nСейчас будет спам..\nИ всё что было выслано за сегодня, "
-                            f"повторно вышлется обратно.."
+                            f"повторно вышлется обратно..\nСвязано с переносом бота на сервер.."
                 }
                 async with session.post(url, data=data) as response:
                     if response.status == 200:

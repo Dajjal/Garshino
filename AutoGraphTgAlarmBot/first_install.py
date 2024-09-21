@@ -14,7 +14,9 @@ class AutoGraphStage(BaseModel):
     __tablename__ = 'autograph_stages'
 
     stage = Column(String(50))  # заправка / слив
-    datetime = Column(String(200))  # дата и время
+    date = Column(String(20)) # дата
+    start_time = Column(String(20))  # дата и время начала
+    end_time = Column(String(20))  # дата и время конца
     machine_id = Column(Uuid, default=uuid.UUID(int=0))  # id машины
     machine_name = Column(String(50))  # название машины
     machine_reg_number = Column(String(50))  # номер машины
@@ -58,15 +60,18 @@ class AutoGraphMachineDriverRelation(BaseModel):
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-    # with Session() as session:
-    #     demo_record = AutoGraphStage(
-    #         id=uuid.UUID(int=0),
-    #         stage='demo',
-    #         datetime='some datetime - some datetime',
-    #         machine_name='demo machine',
-    #         machine_reg_number='demo reg number',
-    #         benzo='0',
-    #         driver_fullname='demo driver fullname'
-    #     )
-    #     session.add(demo_record)
-    #     session.commit()
+    with Session() as session:
+        demo_record = AutoGraphStage(
+            id=uuid.UUID(int=0),
+            stage='demo',
+            date='some date',
+            start_time='00:00:00',
+            end_time='23:59:59',
+            machine_name='demo machine',
+            machine_reg_number='demo reg number',
+            benzo='0',
+            driver_fullname='demo driver fullname',
+            sent=True,
+        )
+        session.add(demo_record)
+        session.commit()

@@ -22,13 +22,15 @@ async def send_telegram_messages():
     url = f'https://api.telegram.org/bot{token}/sendMessage'
 
     with Session() as db_session:
-        messages = db_session.query(AutoGraphStage).filter(AutoGraphStage.sent == False).all()
+        messages = db_session.query(
+            AutoGraphStage).filter(
+            AutoGraphStage.sent == False).order_by(
+            AutoGraphStage.start_time).all()
         users = db_session.query(AutoGraphUser).all()
 
         async with aiohttp.ClientSession() as session:
             for message in messages:
                 stage_icon = '🟢' if str(message.stage).lower() == 'заправка' else '🔴'
-                dates = message.datetime.split(' - ')
 
                 for user in users:
                     if message.machine_id in fuel_tanker_ids:
@@ -36,7 +38,8 @@ async def send_telegram_messages():
                             'chat_id': user.telegram_chat_id,
                             'text': f"🏢 - Гаршино\n{stage_icon} - {message.stage}\n"
                                     f"🚗 - {message.machine_name} - {message.machine_reg_number}\n"
-                                    f"⌚ - {dates[0]}\n         {dates[1]}\n"
+                                    f"📅 - {message.date}\n"
+                                    f"⌚ - {message.start_time} - {message.end_time}\n"
                                     f"⛽ - {message.benzo} л.\n👤 - {message.driver_fullname}\n"
                         }
                     else:
@@ -44,7 +47,8 @@ async def send_telegram_messages():
                             'chat_id': user.telegram_chat_id,
                             'text': f"🏢 - Гаршино\n{stage_icon} - {message.stage}\n"
                                     f"🚗 - {message.machine_name} - {message.machine_reg_number}\n"
-                                    f"⌚ - {dates[0]}\n         {dates[1]}\n"
+                                    f"📅 - {message.date}\n"
+                                    f"⌚ - {message.start_time} - {message.end_time}\n"
                                     f"⛽ - {message.benzo} л."
                         }
 
@@ -73,6 +77,10 @@ async def process_stage(session, token, schema, machines, stage_name):
         if response.status == 200:
             data = await response.json()
             is_refill = stage_name == os.getenv('STAGE_REFILL')
+
+            # with open(f'{stage_name}.json', 'w', encoding='utf-8') as f:
+            #     json.dump((await response.json()), f, ensure_ascii=False, indent=4)
+
             machines = [m for m in machines if (m['id'] in fuel_tanker_ids) == is_refill]
 
             for machine in machines:
@@ -93,7 +101,7 @@ async def process_stage(session, token, schema, machines, stage_name):
                         with Session() as db_session:
                             if not db_session.query(AutoGraphStage).filter(and_(
                                     AutoGraphStage.stage == item.get('Caption'),
-                                    AutoGraphStage.datetime == f"{sd:%d.%m.%Y %H:%M:%S} - {ed:%d.%m.%Y %H:%M:%S}",
+                                    AutoGraphStage.date == f'{sd:%d.%m.%Y}',
                                     AutoGraphStage.machine_id == uuid.UUID(machine['id']),
                                     AutoGraphStage.benzo == benzo,
                                     AutoGraphStage.driver_id == driver_id
@@ -109,7 +117,9 @@ async def process_stage(session, token, schema, machines, stage_name):
                                         sent = True
                                 db_session.add(AutoGraphStage(
                                     stage=item.get('Caption'),
-                                    datetime=f"{sd:%d.%m.%Y %H:%M:%S} - {ed:%d.%m.%Y %H:%M:%S}",
+                                    date=f'{sd:%d.%m.%Y}',
+                                    start_time=f'{sd:%H:%M:%S}',
+                                    end_time=f'{ed:%H:%M:%S}',
                                     machine_id=uuid.UUID(machine['id']),
                                     machine_name=machine['machine_name'],
                                     machine_reg_number=machine['reg_number'],
@@ -141,8 +151,8 @@ async def load_machines(token):
             if response.status == 200:
                 items = (await response.json()).get('Items', [])
 
-                with open('machines.json', 'w', encoding='utf-8') as f:
-                    json.dump((await response.json()), f, ensure_ascii=False, indent=4)
+                # with open('machines.json', 'w', encoding='utf-8') as f:
+                #     json.dump((await response.json()), f, ensure_ascii=False, indent=4)
 
                 with Session() as db_session:
                     for item in items:
