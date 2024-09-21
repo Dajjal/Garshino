@@ -49,10 +49,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Настройка файлов по умолчанию и статики
+app.UseDefaultFiles();
 app.UseStaticFiles();
+
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("DevelopingCors");
 app.UseAuthorization();
 app.MapControllers();
+app.MapFallbackToFile("/index.html");
+
 await app.RunAsync();
